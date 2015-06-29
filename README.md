@@ -59,65 +59,68 @@ The text file will contain the information of which image is stored where inside
     <input file> <x> <y> <width> <height>
 
 Example
-
-    player.png 0 0 128 128
-    enemies.png 128 0 128 128
-    npcs.png 256 0 128 128
-
+```
+player.png 0 0 128 128
+enemies.png 128 0 128 128
+npcs.png 256 0 128 128
+```
 ## Image format:
 
 The generated image is usually 32 bits per pixel (with alpha channel), if the output format allows.
 
 ## Example: generate and export an atlas.
 
-    #include "chizu.h"
+```cpp
+#include "chizu.h"
 
-    int main() {
-        chizu_init();
-        chizu * atlas = chizu_create(1024, 1024);
+int main() {
+   chizu_init();
+   chizu * atlas = chizu_create(1024, 1024);
 
-        chizu_insert(atlas, "player.png"); 
-        chizu_insert(atlas, "enemies.png"); 
-        chizu_insert(atlas, "npcs.png");
-        chizu_export(atlas, "characters.txt", "characters.png", CHIZU_FORMAT_PNG);
+   chizu_insert(atlas, "player.png"); 
+   chizu_insert(atlas, "enemies.png"); 
+   chizu_insert(atlas, "npcs.png");
+   chizu_export(atlas, "characters.txt", "characters.png", CHIZU_FORMAT_PNG);
 
-        chizu_destroy(atlas);
-        chizu_quit();
-        return 0;
-    }
-
+   chizu_destroy(atlas);
+   chizu_quit();
+   return 0;
+}
+```
 ## Example: Generate and obtain atlas in runtime.
 
-    #include "chizu.h"
+```cpp
+#include "chizu.h"
 
-    chizu_export_status custom_export(czexport * node, void * priv) {
-        printf("file %s is at %dx%d+%dx%d\n", node->subfile, node->x, node->y, node->w, node->h);
-        return CHIZU_EXPORT_OK;
-    }
+chizu_export_status custom_export(czexport * node, void * priv) {
+    printf("file %s is at %dx%d+%dx%d\n", node->subfile, node->x, node->y, node->w, node->h);
+    return CHIZU_EXPORT_OK;
+}
 
-    void read_pixels(const void * pixels, unsigned w, unsigned h, unsigned d, void * priv) {
-        /* upload texture, convert pixels, whatever */
-    }
+void read_pixels(const void * pixels, unsigned w, unsigned h, unsigned d, void * priv) {
+    /* upload texture, convert pixels, whatever */
+}
 
-    int main() {
-        chizu_init();
-        chizu * atlas = chizu_create(1024, 1024);
+int main() {
+   chizu_init();
+   chizu * atlas = chizu_create(1024, 1024);
 
-        chizu_insert(atlas, "player.png"); 
-        chizu_insert(atlas, "enemies.png"); 
-        chizu_insert(atlas, "npcs.png");
+   chizu_insert(atlas, "player.png"); 
+   chizu_insert(atlas, "enemies.png"); 
+   chizu_insert(atlas, "npcs.png");
 
-        // custom_export is called for every subrect.
-        // the third parameter will be passed in each call to custom_export
-        chizu_custom_export(atlas, custom_export, NULL);
+   // custom_export is called for every subrect.
+   // the third parameter will be passed in each call to custom_export
+   chizu_custom_export(atlas, custom_export, NULL);
 
-        // read_pixels is called with the resulting pixel data so far
-        // the third parameter will be passed to read_pixels.
-        chizu_pixel_data(atlas, read_pixels, NULL);
+   // read_pixels is called with the resulting pixel data so far
+   // the third parameter will be passed to read_pixels.
+   chizu_pixel_data(atlas, read_pixels, NULL);
 
-        chizu_destroy(atlas);
-        chizu_quit();
-        return 0;
-    }
+   chizu_destroy(atlas);
+   chizu_quit();
+   return 0;
+}
+```
 
 These two examples should cover all the public functions in Chizu.
