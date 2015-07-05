@@ -84,7 +84,7 @@ int main(int argc, char ** argv) {
     atlas = chizu_create(width, height);
 
     /* Insert every file passed in in the atlas*/
-    for (i = 4; i < argc; i++) {
+    for (i = 3; i < argc; i++) {
         printf("Inserting %s... ", argv[i]);
         chizu_insert_status status = chizu_insert(atlas, argv[i]);
         switch(status) {
