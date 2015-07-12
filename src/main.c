@@ -54,17 +54,7 @@ int main(int argc, char ** argv) {
     /* initializes Chizu library */
     chizu_init();
 
-    /* Gathers width, height and output files */
-    unsigned width = atoi(argv[1]);
-    unsigned height = width;
-    if (width == 0) {
-        printf("%s\n", helptext);
-        printf("* Error: square-size cannot be 0 (must be an integer greater than 0)\n");
-        chizu_quit();
-        return 0;
-    }
-
-    const char * base = argv[2];
+    const char * base = argv[1];
     if (strlen(base) > 1019) {
         printf("Output base filename too big!");
         chizu_quit();
@@ -81,10 +71,10 @@ int main(int argc, char ** argv) {
     strcat(tex, ".png");
 
     /* Creates a new chizu atlas */
-    atlas = chizu_create(width, height);
+    atlas = chizu_create();
 
     /* Insert every file passed in in the atlas*/
-    for (i = 3; i < argc; i++) {
+    for (i = 2; i < argc; i++) {
         printf("Inserting %s... ", argv[i]);
         chizu_insert_status status = chizu_insert(atlas, argv[i]);
         switch(status) {

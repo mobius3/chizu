@@ -26,23 +26,22 @@ cmake call.
 
 ## Using the tool:
 
-The chizu tool is a command-line executable to generate square-sized atlas (the library can generate any size).
+The chizu tool is a command-line executable to generate an atlas. It creates an image large enough to hold all the textures.
 
 These are the arguments:
 
-    ./chizu <square-size> <base-file-name> <image1> <image2> [image3...]
+    ./chizu <base-file-name> <image1> <image2> [image3...]
 
 Where
 
-- `<square-size>` is the square size of the final atlas.
 - `<base-file-name>` is the base name for the .txt and .png
 - `<imageN>` a list files to put in the atlas. At leas two must be provided.
 
 Example
 
-    ./chizu 1024 characters player.png enemies.png npcs.png
+    ./chizu characters player.png enemies.png npcs.png
 
-Will generate a 1024x1024 png called `characters.png` and a `characters.txt` file.
+Will generate a png called `characters.png` and a `characters.txt` file.
 
 ## Using the library:
 
@@ -74,7 +73,7 @@ The generated image is usually 32 bits per pixel (with alpha channel), if the ou
 
     int main() {
         chizu_init();
-        chizu * atlas = chizu_create(1024, 1024);
+        chizu * atlas = chizu_create();
 
         chizu_insert(atlas, "player.png"); 
         chizu_insert(atlas, "enemies.png"); 
@@ -101,7 +100,7 @@ The generated image is usually 32 bits per pixel (with alpha channel), if the ou
 
     int main() {
         chizu_init();
-        chizu * atlas = chizu_create(1024, 1024);
+        chizu * atlas = chizu_create();
 
         chizu_insert(atlas, "player.png"); 
         chizu_insert(atlas, "enemies.png"); 

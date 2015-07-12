@@ -33,6 +33,7 @@ THE SOFTWARE.
 
 typedef struct czdata {
     char * file;
+    czsurface * surface;
     struct chizu * atlas;
 } czdata;
 
@@ -50,16 +51,20 @@ struct chizu {
 };
 
 
+
 /* internal forward declarations */
 
+static unsigned chizu_internal_next_power_of_2(unsigned n);
 static chizu * chizu_internal_alloc();
 static czdata * czdata_internal_alloc();
 static void chizu_internal_free(chizu * cz);
 static void czdata_internal_free(czdata * d);
 static void czdata_internal_destroy(void * d);
 static void czdata_internal_rect_export(czrect r, void * d, void * priv);
+static void czdata_internal_custom_rect_blit(czrect r, void * d, void * priv);
 static void chizu_internal_custom_rect_export(czrect r, void * d, void * priv);
 static chizu_export_status chizu_internal_export_map(chizu * atlas, const char * spec);
+static czrect chizu_internal_lease_or_enlarge(chizu * atlas, unsigned width, unsigned height, void * data);
 
 
 /* public stuff */
@@ -83,16 +88,12 @@ void chizu_quit() {
     SDL_Quit();
 }
 
-chizu * chizu_create(unsigned width, unsigned height) {
+chizu * chizu_create() {
     chizu * cz = chizu_internal_alloc();
-    cz->size.w = width;
-    cz->size.h = height;
-    cz->target = czsurface_create(width, height);
-    if (cz->target == NULL) {
-        chizu_internal_free(cz);
-        return NULL;
-    }
-    cz->map = czmap_create(width, height);
+    cz->size.w = 2;
+    cz->size.h = 2;
+
+    cz->map = czmap_create(cz->size.w, cz->size.h);
     if (cz->map == NULL) {
         chizu_internal_free(cz);
         return NULL;
@@ -102,8 +103,6 @@ chizu * chizu_create(unsigned width, unsigned height) {
 
 chizu_insert_status chizu_insert(chizu * atlas, const char * file) {
     czsize surfsize;
-    czrect resultrect;
-    czpoint blitpoint;
     czdata * data = czdata_internal_alloc();
     czsurface * surface = czsurface_load(file);
     if (surface == NULL) {
@@ -113,23 +112,20 @@ chizu_insert_status chizu_insert(chizu * atlas, const char * file) {
     surfsize = czsurface_size(surface);
     data->file = SDL_strdup(file);
     data->atlas = atlas;
-    resultrect = czmap_lease(atlas->map, surfsize.w, surfsize.h, data);
-    if (czrect_is_empty(resultrect)) {
-        czsurface_destroy(surface);
-        czdata_internal_free(data);
-        return CHIZU_INSERT_NOSPACE;
-    }
+    data->surface = surface;
 
-    blitpoint.x = resultrect.x;
-    blitpoint.y = resultrect.y;
-
-    czsurface_blit(surface, atlas->target, blitpoint);
-    czsurface_destroy(surface);
+    chizu_internal_lease_or_enlarge(atlas, surfsize.w, surfsize.h, data);
     return CHIZU_INSERT_OK;
 }
 
 
 chizu_export_status chizu_export(chizu * atlas, const char * spec, const char * texture, chizu_export_format format) {
+    /* create surface target */
+    atlas->target = czsurface_create(atlas->size.w, atlas->size.h);
+    if (atlas->target == NULL) {
+        return CHIZU_EXPORT_TEXTURE_FAIL;
+    }
+
     chizu_export_status status = CHIZU_EXPORT_OK;
     if (chizu_internal_export_map(atlas, spec) != CHIZU_EXPORT_OK) {
         status = CHIZU_EXPORT_SPEC_FAIL;
@@ -162,11 +158,13 @@ chizu_export_status chizu_custom_export(chizu * atlas, chizu_custom_export_func 
 }
 
 void chizu_pixel_data(chizu * atlas, chizu_receive_pixel_data_func f, void * priv) {
-    void * pixels = czsurface_lock(atlas->target);
+    czsurface * output = czsurface_create(atlas->size.w, atlas->size.h);
     if (f != NULL) {
+        void * pixels = czsurface_lock(output);
+        czmap_foreach(atlas->map, czdata_internal_custom_rect_blit, output);
         f(pixels, atlas->size.w, atlas->size.h, 32, priv);
+        czsurface_unlock(atlas->target);
     }
-    czsurface_unlock(atlas->target);
 }
 
 void chizu_destroy(chizu * atlas) {
@@ -177,6 +175,17 @@ void chizu_destroy(chizu * atlas) {
 
 
 /* internal stuff */
+
+static unsigned chizu_internal_next_power_of_2(unsigned n) {
+    n--;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n++;
+    return n;
+}
 
 static chizu * chizu_internal_alloc() {
     chizu * cz = calloc(sizeof(chizu), 1);
@@ -201,14 +210,25 @@ static void czdata_internal_destroy(void * d) {
     if (d == NULL)
         return;
     SDL_free(data->file);
+    czsurface_destroy(data->surface);
     czdata_internal_free(data);
 }
 
 static void czdata_internal_rect_export(czrect r, void * d, void * priv) {
     czdata * data = (czdata *) d;
+    czpoint dst = { r.x, r.y };
     FILE * out = data->atlas->output;
     fprintf(out, "%s %d %d %d %d\n", data->file, r.x, r.y, r.w, r.h);
+    czsurface_blit(data->surface, data->atlas->target, dst);
 }
+
+static void czdata_internal_custom_rect_blit(czrect r, void * d, void * priv) {
+    czsurface * output = (czsurface *) priv;
+    czdata * data = (czdata *) d;
+    czpoint dst = { r.x, r.y };
+    czsurface_blit(data->surface, output, dst);
+}
+
 
 static void chizu_internal_custom_rect_export(czrect r, void * d, void * priv) {
     czfuncdata * funcdata = (czfuncdata *) priv;
@@ -234,5 +254,35 @@ static chizu_export_status chizu_internal_export_map(chizu * atlas, const char *
     fclose(atlas->output);
     atlas->output = NULL;
     return CHIZU_EXPORT_OK;
+}
+
+static czrect chizu_internal_lease_or_enlarge(chizu * atlas, unsigned width, unsigned height, void * data) {
+    czrect resultrect;
+    unsigned inc = 0;
+    czmap * newmap = NULL;
+    resultrect = czmap_lease(atlas->map, width, height, data);
+    if (!czrect_is_empty(resultrect))
+        return resultrect;
+
+    /* find the largest size to expand map with */
+    inc = width;
+    if (width < height) inc = height;
+
+    if (atlas->size.w > atlas->size.h)
+        atlas->size.h += inc;
+    else
+        atlas->size.w += inc;
+
+    atlas->size.w = chizu_internal_next_power_of_2(atlas->size.w);
+    atlas->size.h = chizu_internal_next_power_of_2(atlas->size.h);
+
+    /* create a new map and copy contents */
+    newmap = czmap_create(atlas->size.w, atlas->size.h);
+    czmap_copy(atlas->map, newmap);
+    czmap_destroy(atlas->map, NULL);
+    atlas->map = newmap;
+
+    /* try again until space was found */
+    return chizu_internal_lease_or_enlarge(atlas, width, height, data);
 }
 

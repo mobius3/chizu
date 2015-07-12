@@ -123,11 +123,9 @@ CHIZU_API void chizu_quit();
 
 /**
  * @brief chizu_create Creates a new textyre atlas of width/height.
- * @param width The target width of the atlas
- * @param height The target height of the atlas
  * @return An chizu * atlas instance.
  */
-CHIZU_API chizu * chizu_create(unsigned width, unsigned height);
+CHIZU_API chizu * chizu_create();
 
 /**
  * @brief chizu_insert Inserts a new subimage in the atlas.

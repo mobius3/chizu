@@ -33,9 +33,15 @@ typedef struct czmap czmap;
 typedef void (*czwalkfunc)(czrect rect, void * data, void * priv);
 typedef void (*czdestroyfunc)(void * data);
 
+typedef enum czmap_copy_status {
+    CZMAP_COPY_OK,
+    CZMAP_COPY_NOSPACE
+} czmap_copy_status;
+
 czmap * czmap_create(unsigned width, unsigned height);
 void czmap_destroy(czmap * map, czdestroyfunc func);
 czrect czmap_lease(czmap * map, unsigned width, unsigned height, void * data);
 void czmap_foreach(czmap * map, czwalkfunc func, void * priv);
+czmap_copy_status czmap_copy(czmap * src, czmap * dst);
 
 #endif

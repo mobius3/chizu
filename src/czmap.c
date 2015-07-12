@@ -43,6 +43,11 @@ struct czmap
     czrect rect;
 };
 
+typedef struct czmap_inserter_data {
+    czmap * dst;
+    unsigned char nospace;
+} czmap_inserter_data;
+
 czmap * czmap_create(unsigned width, unsigned height) {
     struct czmap * r = czmap_internal_alloc(0, 0, width, height);
     return r;
@@ -75,6 +80,28 @@ void czmap_foreach(czmap * map, czwalkfunc func, void * priv) {
         czmap_foreach(map->left, func, priv);
     if (map->right != NULL)
         czmap_foreach(map->right, func, priv);
+}
+
+void czmap_internal_inserter(czrect rect, void * data, void * priv) {
+    czmap_inserter_data * idata = (czmap_inserter_data*) priv;
+    if (idata->nospace) return;
+
+    czrect result = czmap_lease(idata->dst, rect.w, rect.h, data);
+    if (czrect_is_empty(result))
+        idata->nospace = 1;
+}
+
+czmap_copy_status czmap_copy(czmap * src, czmap * dst) {
+    czmap_inserter_data idata;
+    idata.dst = dst;
+    idata.nospace = 0;
+
+    /* inserter will find space. idata.nospace will be = 1 if
+     * it failed somewhere */
+    czmap_foreach(src, czmap_internal_inserter, &idata);
+
+    if (idata.nospace == 0) return CZMAP_COPY_OK;
+    else return CZMAP_COPY_NOSPACE;
 }
 
 
