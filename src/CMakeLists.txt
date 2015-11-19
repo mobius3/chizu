@@ -45,6 +45,7 @@ set_target_properties(chizu PROPERTIES DEFINE_SYMBOL CHIZU_EXPORTS ARCHIVE_OUTPU
 
 # Install rules for lib, header and executable
 install(TARGETS chizu
+    EXPORT ${PROJECT_NAME}-targets
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -57,6 +58,7 @@ if (CHIZU_EXECUTABLE)
     set_target_properties(chizu_e PROPERTIES OUTPUT_NAME "chizu" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
     install(TARGETS chizu_e
+        EXPORT ${PROJECT_NAME}-targets
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib

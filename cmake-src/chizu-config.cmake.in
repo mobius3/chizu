@@ -1,0 +1,16 @@
+set(CHIZU_VERSION "@CHIZU_VERSION_VERSION@")
+
+@PACKAGE_INIT@
+
+set_and_check(CHIZU_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+set_and_check(CHIZU_LIBRARY_DIR "@PACKAGE_LIB_INSTALL_DIR@")
+
+check_required_components(chizu)
+
+if (NOT TARGET chizu)
+include(${CMAKE_CURRENT_LIST_DIR}/chizu-targets.cmake)
+endif()
+
+set(CHIZU_LIBRARY CHIZU)
+set(CHIZU_LIBRARY_DIR ${CHIZU_LIBRARY_DIR})
+set(CHIZU_INCLUDE_DIR ${CHIZU_INCLUDE_DIR})
