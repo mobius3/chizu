@@ -39,7 +39,10 @@ int main(int argc, char ** argv) {
     const char * helptext =
         "Chizu atlas generator, to demonstrate libchizu.\n"
         "Usage:\n"
-        "  ./chizu <square-size> <output-base> <file 1> <file 2> [<file 3> ...]\n"
+        "  ./chizu <output-base-name> <file 1> <file 2> [<file 3> ...]\n"
+        "\n"
+        "Example:\n"
+        "  ./chizu my-atlas sprite1.png sprite2.png sprite3.png sprite4.png\n"
         "\n"
         "Chizu uses http://www.blackpawn.com/texts/lightmaps/ as its algorthimg.\n";
     int i = 0;
