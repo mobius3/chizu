@@ -25,9 +25,11 @@ THE SOFTWARE.
 #include "chizu.h"
 #include "czsurface.h"
 #include "czmap.h"
-#include "SDL.h"
-#include "SDL_image.h"
 #include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+
+static char * chizu_internal_strdup(const char *s);
 
 /* data type declarations */
 
@@ -70,22 +72,10 @@ static czrect chizu_internal_lease_or_enlarge(chizu * atlas, unsigned width, uns
 /* public stuff */
 
 int chizu_init() {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        fprintf(stderr, "czinit: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    if (IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF) == 0) {
-        fprintf(stderr, "czinit: %s\n", IMG_GetError());
-        return 1;
-    }
-
     return 0;
 }
 
 void chizu_quit() {
-    IMG_Quit();
-    SDL_Quit();
 }
 
 chizu * chizu_create() {
@@ -110,7 +100,7 @@ chizu_insert_status chizu_insert(chizu * atlas, const char * file) {
         return CHIZU_INSERT_FILEOPEN_FAIL;
     }
     surfsize = czsurface_size(surface);
-    data->file = SDL_strdup(file);
+    data->file = chizu_internal_strdup(file);
     data->atlas = atlas;
     data->surface = surface;
 
@@ -137,6 +127,7 @@ chizu_export_status chizu_export(chizu * atlas, const char * spec, const char * 
         case CHIZU_FORMAT_TGA: sf = CZSURFACE_FORMAT_TGA; break;
         case CHIZU_FORMAT_HDR: sf = CZSURFACE_FORMAT_HDR; break;
         case CHIZU_FORMAT_BMP: sf = CZSURFACE_FORMAT_BMP; break;
+        default: return CHIZU_EXPORT_FAIL;
     }
 
     if (czsurface_save(atlas->target, texture, sf) != CZSURFACE_SAVE_OK) {
@@ -160,10 +151,9 @@ chizu_export_status chizu_custom_export(chizu * atlas, chizu_custom_export_func 
 void chizu_pixel_data(chizu * atlas, chizu_receive_pixel_data_func f, void * priv) {
     czsurface * output = czsurface_create(atlas->size.w, atlas->size.h);
     if (f != NULL) {
-        void * pixels = czsurface_lock(output);
+        void * pixels = czsurface_pixels(output);
         czmap_foreach(atlas->map, czdata_internal_custom_rect_blit, output);
         f(pixels, atlas->size.w, atlas->size.h, 32, priv);
-        czsurface_unlock(atlas->target);
     }
 }
 
@@ -209,7 +199,7 @@ static void czdata_internal_destroy(void * d) {
     czdata * data = (czdata *) d;
     if (d == NULL)
         return;
-    SDL_free(data->file);
+    free(data->file);
     czsurface_destroy(data->surface);
     czdata_internal_free(data);
 }
@@ -286,3 +276,9 @@ static czrect chizu_internal_lease_or_enlarge(chizu * atlas, unsigned width, uns
     return chizu_internal_lease_or_enlarge(atlas, width, height, data);
 }
 
+static char * chizu_internal_strdup(const char * s) {
+    size_t n = strlen(s);
+    char * p = (char *) malloc(n+1);
+    if (p) strcpy(p,s);
+    return p;
+}

@@ -23,117 +23,96 @@ THE SOFTWARE.
 */
 
 #include "czsurface.h"
-#include "czmap.h"
-#include "SDL.h"
-#include "SDL_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 struct czsurface {
-    SDL_Surface * sdl_surface;
+    int width;
+    int height;
+    int bpp;
+    unsigned char * pixels;
 };
 
 static czsurface * czsurface_internal_alloc();
+static void czsurface_internal_destroy(czsurface *);
+static void czsurface_internal_blit(czsurface * srcsurface, czsurface * dstsurface, czpoint where);
 
 czsurface * czsurface_load(const char * file) {
-    czsurface * r = NULL;
-    SDL_Surface * surface = IMG_Load(file);
-    if (surface != NULL) {
-         r = czsurface_internal_alloc();
-         r->sdl_surface = surface;
-         SDL_SetSurfaceBlendMode(r->sdl_surface, SDL_BLENDMODE_BLEND);
-    } else {
-        printf("%s\n", IMG_GetError());
-    }
-
+    czsurface * r = czsurface_internal_alloc();
+    r->pixels = stbi_load(file, &(r->width), &(r->height), NULL, 4);
+    r->bpp = 4;
     return r;
 }
 
 void czsurface_destroy(czsurface * surface) {
-    SDL_FreeSurface(surface->sdl_surface);
-    free(surface);
+    free(surface->pixels);
+    czsurface_internal_destroy(surface);
 }
 
 czsize czsurface_size(czsurface * surface) {
     czsize r;
-    r.w = surface->sdl_surface->w;
-    r.h = surface->sdl_surface->h;
+    r.w = (unsigned) surface->width;
+    r.h = (unsigned) surface->height;
     return r;
 }
 
 czsurface * czsurface_create(unsigned width, unsigned height) {
-    unsigned rmask, gmask, bmask, amask;
-    SDL_Surface * s = NULL;
-    czsurface * czs = NULL;
-  #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    rmask = 0xff000000;
-    gmask = 0x00ff0000;
-    bmask = 0x0000ff00;
-    amask = 0x000000ff;
-  #else
-    rmask = 0x000000ff;
-    gmask = 0x0000ff00;
-    bmask = 0x00ff0000;
-    amask = 0xff000000;
-  #endif
-    s = SDL_CreateRGBSurface(0, width, height, 32, rmask, gmask, bmask, amask);
-    if (s != NULL) {
-        SDL_SetSurfaceBlendMode(s, SDL_BLENDMODE_NONE);
-        czs = czsurface_internal_alloc();
-        czs->sdl_surface = s;
-    }
-    return czs;
+    czsurface * s = czsurface_internal_alloc();
+    s->pixels = calloc(height, width * 4);
+    s->width = width;
+    s->height = height;
+    s->bpp = 4;
+    return s;
 }
 
 czsurface_blit_status czsurface_blit(czsurface * src, czsurface * dst, czpoint dstpoint) {
-    SDL_Rect dstrect;
-    dstrect.x = dstpoint.x;
-    dstrect.y = dstpoint.y;
-    dstrect.w = dst->sdl_surface->w;
-    dstrect.h = dst->sdl_surface->h;
-    if (SDL_BlitSurface(src->sdl_surface, NULL, dst->sdl_surface, &dstrect) != 0) {
-        return CZSURFACE_BLIT_FAIL;
-    }
-
+    czsurface_internal_blit(src, dst, dstpoint);
     return CZSURFACE_BLIT_OK;
 }
 
 czsurface_save_status czsurface_save(czsurface * src, const char * dest, czsurface_save_format format) {
     int status = 0;
-    SDL_Surface * surface = src->sdl_surface;
-    SDL_LockSurface(surface);
-    void * pixels = src->sdl_surface->pixels;
+    void * pixels = src->pixels;
     switch (format) {
-        case CZSURFACE_FORMAT_PNG: status = stbi_write_png(dest, surface->w, surface->h, 4, pixels, surface->pitch); break;
-        case CZSURFACE_FORMAT_BMP: status = stbi_write_bmp(dest, surface->w, surface->h, 4, pixels); break;
-        case CZSURFACE_FORMAT_TGA: status = stbi_write_tga(dest, surface->w, surface->h, 4, pixels); break;
-        case CZSURFACE_FORMAT_HDR: status = stbi_write_hdr(dest, surface->w, surface->h, 4, pixels); break;
+        case CZSURFACE_FORMAT_PNG: status = stbi_write_png(dest, src->width, src->height, 4, pixels, src->width * 4); break;
+        case CZSURFACE_FORMAT_BMP: status = stbi_write_bmp(dest, src->width, src->height, 4, pixels); break;
+        case CZSURFACE_FORMAT_TGA: status = stbi_write_tga(dest, src->width, src->height, 4, pixels); break;
+        case CZSURFACE_FORMAT_HDR: status = stbi_write_hdr(dest, src->width, src->height, 4, pixels); break;
     }
-    SDL_UnlockSurface(surface);
 
     if (status > 0) {
         return CZSURFACE_SAVE_FAIL;
     }
-
     return CZSURFACE_SAVE_OK;
 }
 
-void * czsurface_lock(czsurface * surface) {
-    if (SDL_MUSTLOCK(surface->sdl_surface)) {
-        SDL_LockSurface(surface->sdl_surface);
-    }
-    return surface->sdl_surface->pixels;
-}
-
-void czsurface_unlock(czsurface * surface) {
-    if (SDL_MUSTLOCK(surface->sdl_surface)) {
-        SDL_UnlockSurface(surface->sdl_surface);
-    }
+void * czsurface_pixels(czsurface * surface) {
+    return surface->pixels;
 }
 
 /* internal stuff */
 static czsurface * czsurface_internal_alloc() {
     czsurface * cz = calloc(sizeof(czsurface), 1);
     return cz;
+}
+
+static void czsurface_internal_destroy(czsurface * surface) {
+    free(surface);
+}
+
+static void czsurface_internal_blit(czsurface * srcsurface, czsurface * dstsurface, czpoint where) {
+    unsigned char * src = srcsurface->pixels;
+    unsigned char * dst = dstsurface->pixels + ((where.y * dstsurface->width + where.x) * dstsurface->bpp);
+    unsigned i = 0;
+    int srcpitch = srcsurface->width * srcsurface->bpp;
+    int dstpitch = dstsurface->width * dstsurface->bpp;
+    for (i = 0; i < srcsurface->height; i++) {
+        memcpy(dst, src, (unsigned) dstsurface->bpp * srcsurface->width);
+        dst += dstpitch;
+        src += srcpitch;
+    }
 }

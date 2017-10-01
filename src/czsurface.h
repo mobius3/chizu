@@ -55,8 +55,7 @@ czsurface_blit_status czsurface_blit(czsurface * src, czsurface * dst, czpoint d
 czsurface_save_status czsurface_save(czsurface * src, const char * dest, czsurface_save_format format);
 void czsurface_destroy(czsurface * surface);
 czsize czsurface_size(czsurface * surface);
-void * czsurface_lock(czsurface * surface);
-void czsurface_unlock(czsurface * surface);
+void * czsurface_pixels(czsurface * surface);
 
 
 #endif

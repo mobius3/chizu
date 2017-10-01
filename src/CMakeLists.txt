@@ -1,6 +1,3 @@
-find_package(SDL2 REQUIRED) # Need SDL2
-find_package(SDL2_image REQUIRED) # Need SDL2_image
-
 # Need at least C99
 set(CMAKE_C_STANDARD 99)
 
@@ -22,6 +19,7 @@ set(CHIZU_SOURCES
     czmap.c
     czsurface.c
     stb_image_write.h
+    stb_image.h
 )
 
 set(CHIZU_PRIVATE_HEADERS
@@ -40,7 +38,7 @@ set(CHIZU_PUBLIC_HEADERS
 # Add the chizu library
 add_library(chizu ${CHIZU_SOURCES} ${CHIZU_PRIVATE_HEADERS})
 target_include_directories(chizu PRIVATE ${SDL2_INCLUDE_DIR} ${SDL2_IMAGE_INCLUDE_DIR})
-target_link_libraries(chizu PUBLIC ${SDL2_LIBRARY} ${SDL2_IMAGE_LIBRARIES})
+target_link_libraries(chizu PUBLIC m)
 set_target_properties(chizu PROPERTIES DEFINE_SYMBOL CHIZU_EXPORTS ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # Install rules for lib, header and executable

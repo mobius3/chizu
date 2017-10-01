@@ -22,11 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "chizu.h"
 #include "czmap.h"
 #include "SDL.h"
-#include "SDL_image.h"
-#include <stdlib.h>
 
 /* internal forward declarations */
 static void czmap_internal_split(czmap * node, unsigned width, unsigned height);
