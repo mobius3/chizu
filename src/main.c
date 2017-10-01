@@ -57,7 +57,6 @@ int main(int argc, char ** argv) {
     const char * base = argv[1];
     if (strlen(base) > 1019) {
         printf("Output base filename too big!");
-        chizu_quit();
         return 0;
     }
 
