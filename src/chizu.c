@@ -68,16 +68,6 @@ static void chizu_internal_custom_rect_export(czrect r, void * d, void * priv);
 static chizu_export_status chizu_internal_export_map(chizu * atlas, const char * spec);
 static czrect chizu_internal_lease_or_enlarge(chizu * atlas, unsigned width, unsigned height, void * data);
 
-
-/* public stuff */
-
-int chizu_init() {
-    return 0;
-}
-
-void chizu_quit() {
-}
-
 chizu * chizu_create() {
     chizu * cz = chizu_internal_alloc();
     cz->size.w = 2;

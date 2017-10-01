@@ -54,9 +54,6 @@ int main(int argc, char ** argv) {
         return 0;
     }
 
-    /* initializes Chizu library */
-    chizu_init();
-
     const char * base = argv[1];
     if (strlen(base) > 1019) {
         printf("Output base filename too big!");
@@ -102,6 +99,5 @@ int main(int argc, char ** argv) {
     chizu_destroy(atlas);
 
     printf(" OK\n");
-    chizu_quit();
     return 0;
 }
