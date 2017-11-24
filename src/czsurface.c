@@ -49,6 +49,8 @@ czsurface * czsurface_load(const char * file) {
 }
 
 void czsurface_destroy(czsurface * surface) {
+    if (surface == NULL)
+        return;
     free(surface->pixels);
     czsurface_internal_destroy(surface);
 }
