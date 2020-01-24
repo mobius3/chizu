@@ -23,8 +23,7 @@ THE SOFTWARE.
 */
 
 #include "czmap.h"
-#include "SDL.h"
-
+#include <stdlib.h>
 /* internal forward declarations */
 static void czmap_internal_split(czmap * node, unsigned width, unsigned height);
 static czmap * czmap_internal_find_space(czmap * node, unsigned width, unsigned height);
